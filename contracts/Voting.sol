@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 /// @author Muhammad Iqbal Syamil Ayasy
@@ -16,11 +18,11 @@ contract Voting{
     struct Voter {
         bool voted;  // if true, that person already voted
         bool eligible; // person delegated to
-        uint vote;   // index of the voted candidate
+        int vote;   // index of the voted candidate
     }
     
     modifier onlyOwner {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "This method can only called from owner");
         _;
     }
 
@@ -37,24 +39,20 @@ contract Voting{
     Candidate[] public candidate;
     
     /// Init Contract by set owner = msg.sender, set end period & init candidate
-    constructor () public {
+    constructor (string[] memory candidateNameList) {
         isVoteActive = true; 
         owner = msg.sender; // set owner contract = deployer
         endEpoch = block.timestamp + 259200; // set voting active (+3 Days) after Contract Deployed
         
         // list candidate (order = index)
-        candidate.push(Candidate(
-            'Iqbal',
-            0,
-            true
-        ));
+        for (uint256 p = 0; p < candidateNameList.length; p++) {
+            candidate.push(Candidate(
+                candidateNameList[p],
+                0,
+                true
+            ));            
+        }
 
-        candidate.push(Candidate(
-            'Syamil',
-            0,
-            true
-        ));
-        
     }
 
     /// set the voting period to end (require epoch <= current block timestamp)
@@ -80,6 +78,7 @@ contract Voting{
         require(!voters[voterAddress].voted,"The Address Is already on the List");
         voters[voterAddress].voted = false;
         voters[voterAddress].eligible = true;
+        voters[voterAddress].vote = -1; // set default to -1
 
     }
     /// mass delegate vote to list voters address, can only accesible from owner
@@ -101,7 +100,7 @@ contract Voting{
         require(candidate[numberCandidate].validCandidate,"Candidate Number is Invalid"); // check candidate 
         
         candidate[numberCandidate].voteCount = candidate[numberCandidate].voteCount + 1;
-        voters[msg.sender].vote = numberCandidate;
+        voters[msg.sender].vote = int(numberCandidate);
         voters[msg.sender].voted = true; 
             
         
